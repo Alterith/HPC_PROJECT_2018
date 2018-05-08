@@ -21,7 +21,7 @@ double distance_com(node* a, node* b) {
 //obtain size of node(s), it will be considered the area of a face, maybe parameter can change later
 
 double  size_region(node* a) {
-    double size = pow((a->max_x - a->min_x), 3);
+    double size = pow((a->max_x - a->min_x), 2);
     return size;
 }
 
