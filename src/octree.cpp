@@ -15,8 +15,8 @@
 
 node* malloc_node(float x_1, float y_1, float z_1, float x_2, float y_2, float z_2) {
     //create node to be returned
-    //node* octree_node = (node*) malloc(sizeof (node));
-    node* octree_node = new node;
+    node* octree_node = (node*) malloc(sizeof (node));
+    //node* octree_node = new node;
 
 
     //initialize children to null
@@ -102,15 +102,15 @@ int child_node(node* octree_node, dim3float pos, dim3float mid);
  * returns number of nodes in branch
  */
 
-int insert_node(node* octree_node, body b, int body_num) {
+int insert_node(node* octree_node, body *b, int body_num) {
 	//placeholder
 	//dim3float pos = dim3float(pos_x, pos_y, pos_z);
 	//std::cout<<body_num<<std::endl;
     //empty node
     if (octree_node->num_points == 0) {
-        octree_node->mass = b.mass;
-        octree_node->com = b.com;
-        octree_node->vel = b.vel;
+        octree_node->mass = b->mass;
+        octree_node->com = b->com;
+        octree_node->vel = b->vel;
 		octree_node->body_num = body_num;
         octree_node->num_points++;
 
@@ -123,8 +123,8 @@ int insert_node(node* octree_node, body b, int body_num) {
             insert_node(octree_node->children[child_num], create_body(octree_node->mass, octree_node->com, octree_node->vel), octree_node->body_num);
         }
         //insert new element into child node
-        int child_num = child_node(octree_node, b.com, octree_node->mid);
-        insert_node(octree_node->children[child_num], create_body(b.mass, b.com, b.vel), body_num);
+        int child_num = child_node(octree_node, b->com, octree_node->mid);
+        insert_node(octree_node->children[child_num], b, body_num);
 
         //update the node com and velocity according to a weighted average according to their masses and velocities
         //com
@@ -134,13 +134,13 @@ int insert_node(node* octree_node, body b, int body_num) {
         octree_node->com.z = ((octree_node->com.z * octree_node->mass)+(pos.z * mass)) / (octree_node->mass + mass);
         */
 
-        octree_node->com = (octree_node->com | octree_node->mass)*(1.0/ (octree_node->mass + b.mass));
+        octree_node->com = (octree_node->com | octree_node->mass)*(1.0/ (octree_node->mass + b->mass));
 
         //velocities
         octree_node->vel = {0};
 
         //mass
-        octree_node->mass += b.mass;
+        octree_node->mass += b->mass;
 
         // place the values in the appropriate child node
 
