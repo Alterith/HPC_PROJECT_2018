@@ -13,6 +13,7 @@
 
 #ifndef OCTREE_H
 #define OCTREE_H
+#include "dim3float.h"
 
 /*
  *  octree node struct which contains:
@@ -23,6 +24,7 @@
  *  the velocity
  *  num of points stored in this branch, 0-8
  *  the force
+ *  the body number
  */
 
 typedef struct node {
@@ -33,39 +35,33 @@ typedef struct node {
     struct node* children[8];
 
     //mass
-    double mass;
+    float mass;
 
     //force
-    double force_x;
-    double force_y;
-    double force_z;
+  	dim3float force;
+
 
     //center of mass
-    double com_x;
-    double com_y;
-    double com_z;
+	dim3float com;
+
 
     //bounds: used for splitting into 8 branches
 
     //min bounds
-    double min_x;
-    double min_y;
-    double min_z;
+    dim3float min;
 
     //max bounds
-    double max_x;
-    double max_y;
-    double max_z;
+    dim3float max;
 
     //mid point
-    double mid_x;
-    double mid_y;
-    double mid_z;
+    dim3float mid;
 
     //velocity in each direction
-    double vel_x;
-    double vel_y;
-    double vel_z;
+	dim3float vel;
+
+	//body number
+	int body_num;
+
 } node;
 
 /*
@@ -73,7 +69,7 @@ typedef struct node {
  *  no new point is assigned by this statement just the cube bounds, and default values
  */
 
-node* malloc_node(double x_1, double y_1, double z_1, double x_2, double y_2, double z_2);
+node* malloc_node(float x_1, float y_1, float z_1, float x_2, float y_2, float z_2);
 
 /*
  * free memory taken by node and children
@@ -89,7 +85,7 @@ void free_node(node* octree_node);
  * returns success code 0, fail 1
  */
 
-int insert_node(node* octree, double mass, double pos_x, double pos_y, double pos_z, double vel_x, double vel_y, double vel_z);
+int insert_node(node* octree, float mass, float pos_x, float pos_y, float pos_z, float vel_x, float vel_y, float vel_z, int body_num);
 
 
 
