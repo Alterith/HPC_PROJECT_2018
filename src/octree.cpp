@@ -11,10 +11,13 @@
 #include <stdlib.h> 
 #include <iostream>
 #include "octree.h"
+//#include "body.h"
 
 node* malloc_node(float x_1, float y_1, float z_1, float x_2, float y_2, float z_2) {
     //create node to be returned
-    node* octree_node = (node*) malloc(sizeof (node));
+    //node* octree_node = (node*) malloc(sizeof (node));
+    node* octree_node = new node;
+
 
     //initialize children to null
     for (int i = 0; i < 8; i++) {
@@ -89,7 +92,7 @@ void free_node(node* octree_node) {
 
 }
 
-int child_node(node* octree, dim3float pos, dim3float mid);
+int child_node(node* octree_node, dim3float pos, dim3float mid);
 
 /*
  * insert node into tree
@@ -99,54 +102,52 @@ int child_node(node* octree, dim3float pos, dim3float mid);
  * returns number of nodes in branch
  */
 
-int insert_node(node* octree, float mass, float pos_x, float pos_y, float pos_z, float vel_x, float vel_y, float vel_z, int body_num) {
+int insert_node(node* octree_node, body b, int body_num) {
 	//placeholder
-	dim3float pos = dim3float(pos_x, pos_y, pos_z);
+	//dim3float pos = dim3float(pos_x, pos_y, pos_z);
 	//std::cout<<body_num<<std::endl;
     //empty node
-    if (octree->num_points == 0) {
-        octree->mass = mass;
-        octree->com.x = pos_x;
-        octree->com.y = pos_y;
-        octree->com.z = pos_z;
-        octree->vel.x = vel_x;
-        octree->vel.y = vel_y;
-        octree->vel.z = vel_z;
-		octree->body_num = body_num;
-        octree->num_points++;
+    if (octree_node->num_points == 0) {
+        octree_node->mass = b.mass;
+        octree_node->com = b.com;
+        octree_node->vel = b.vel;
+		octree_node->body_num = body_num;
+        octree_node->num_points++;
 
     }//node with at least 1 point
     else {
 
         //move node curr val to child node
-        if (octree->num_points == 1) {
-            int child_num = child_node(octree, octree->com, octree->mid);
-            insert_node(octree->children[child_num], octree->mass, octree->com.x, octree->com.y, octree->com.z, octree->vel.x, octree->vel.y, octree->vel.z, octree->body_num);
+        if (octree_node->num_points == 1) {
+            int child_num = child_node(octree_node, octree_node->com, octree_node->mid);
+            insert_node(octree_node->children[child_num], create_body(octree_node->mass, octree_node->com, octree_node->vel), octree_node->body_num);
         }
         //insert new element into child node
-        int child_num = child_node(octree, pos, octree->mid);
-        insert_node(octree->children[child_num], mass, pos.x, pos.y, pos.z, vel_x, vel_y, vel_z, body_num);
+        int child_num = child_node(octree_node, b.com, octree_node->mid);
+        insert_node(octree_node->children[child_num], create_body(b.mass, b.com, b.vel), body_num);
 
         //update the node com and velocity according to a weighted average according to their masses and velocities
         //com
-        octree->com.x = ((octree->com.x * octree->mass)+(pos.x * mass)) / (octree->mass + mass);
-        octree->com.y = ((octree->com.y * octree->mass)+(pos.y * mass)) / (octree->mass + mass);
-        octree->com.z = ((octree->com.z * octree->mass)+(pos.z * mass)) / (octree->mass + mass);
+        /*
+        octree_node->com.x = ((octree_node->com.x * octree_node->mass)+(pos.x * mass)) / (octree_node->mass + mass);
+        octree_node->com.y = ((octree_node->com.y * octree_node->mass)+(pos.y * mass)) / (octree_node->mass + mass);
+        octree_node->com.z = ((octree_node->com.z * octree_node->mass)+(pos.z * mass)) / (octree_node->mass + mass);
+        */
+
+        octree_node->com = (octree_node->com | octree_node->mass)*(1.0/ (octree_node->mass + b.mass));
 
         //velocities
-        octree->vel.x = 0;
-        octree->vel.y = 0;
-        octree->vel.z = 0;
+        octree_node->vel = {0};
 
         //mass
-        octree->mass += mass;
+        octree_node->mass += b.mass;
 
         // place the values in the appropriate child node
 
-        octree->num_points++;
+        octree_node->num_points++;
     }
 
-    return octree->num_points;
+    return octree_node->num_points;
 }
 
 int child_node(node* octree, dim3float pos, dim3float mid) {

@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-std=c++11
+CFLAGS=-std=c++11 -g -O0
 INC_MAIN=inc
 INC_USER=src/inc
 

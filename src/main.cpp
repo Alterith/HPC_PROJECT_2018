@@ -18,6 +18,7 @@
 #include <vector>
 #include "octree.h"
 #include "barnes_hut.h"
+#include "body.h"
 
 using namespace std;
 
@@ -26,7 +27,7 @@ using namespace std;
  */
 
 void update_position(node* octree, node* root);
-void update_point(node* octree, node* root, vector<vector<float> > *point);
+void update_point(node* octree, vector<body> *point);
 
 int main(int argc, char** argv) {
 
@@ -38,19 +39,29 @@ int main(int argc, char** argv) {
 
     //mass, pos x,y,z, vel x,y,z
     //double point[num_ele][7];
-    vector<vector<float>> *point = new vector<vector<float>>(num_ele);
+    vector<body> *point = new vector<body>(num_ele);
     //create point array
     for (int i = 0; i < num_ele; i++) {
         //mass
-        (*point)[i].push_back((float)((rand() % 20000) / 1000.0) + 1.0);
+        double mass = (float)((rand() % 20000) / 1000.0) + 1.0;
+
         //position
-        for(int j = 1; j < 4; j++){
-            (*point)[i].push_back((float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound);
-        }
+        dim3float pos(
+            (float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound,
+            (float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound,
+            (float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound
+        );
+        
         //velocity
-        for(int j = 4; j < 7; j++){
-            (*point)[i].push_back((float)((rand() % 40000) - 20000) / 1000.0);
-        }
+        dim3float vel(
+            (float)((rand() % 40000) - 20000) / 1000.0,
+            (float)((rand() % 40000) - 20000) / 1000.0,
+            (float)((rand() % 40000) - 20000) / 1000.0
+            );
+
+        //insert
+        point->push_back(create_body(mass, pos, vel));
+        
     }
     //insert into tree and run
     for(int i = 0; i < iterations; i++){
@@ -59,10 +70,10 @@ int main(int argc, char** argv) {
         //cout << test->mid.x << " " << test->mid.y << " " << test->mid.z << endl;
         //cout << test->max.x << " " << test->max.y << " " << test->max.z << endl << endl;
         for (int i = 0; i < num_ele; i++) {  
-            int ele = insert_node(test, (*point)[i][0], (*point)[i][1], (*point)[i][2], (*point)[i][3], (*point)[i][4], (*point)[i][5], (*point)[i][6], i);
+            int ele = insert_node(test, (*point)[i], i);
         }
         update_position(test, test);
-        update_point(test, test, point);
+        update_point(test, point);
         //cout<<"updated points"<<endl;
         free_node(test);
         //cout<<"free tree"<<endl;
@@ -85,23 +96,19 @@ void update_position(node* octree, node* root){
 }
 
 //to start pass num_ele = 0
-void update_point(node* octree, node* root, vector<vector<float> > *point){
+void update_point(node* octree, vector<body> *point){
     if(octree->num_points == 1){
         //put point in array
 		//octree->com.cout2();
 		octree->com.new_pos(octree->vel, 0.1);
 		int num_ele = octree->body_num;
-        (*point)[num_ele][0] = octree->mass;
-        (*point)[num_ele][1] = octree->com.x;
-        (*point)[num_ele][2] = octree->com.y;
-        (*point)[num_ele][3] = octree->com.z;
-        (*point)[num_ele][4] = octree->vel.x;
-        (*point)[num_ele][5] = octree->vel.y;
-        (*point)[num_ele][6] = octree->vel.z;
+        (*point)[num_ele].mass = octree->mass;
+        (*point)[num_ele].com = octree->com;
+        (*point)[num_ele].vel = octree->vel;
     }else{
         for(int i = 0; i < 8; i++){
             if(octree->children[i]){
-               update_point(octree->children[i], root, point);
+               update_point(octree->children[i], point);
             }
         }
     }

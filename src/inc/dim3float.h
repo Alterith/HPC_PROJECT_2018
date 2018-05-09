@@ -1,3 +1,6 @@
+#ifndef DIM3FLOAT_H
+#define DIM3FLOAT_H
+
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -70,3 +73,5 @@ struct dim3float
 typedef struct dim3float dim3float;
 
 //----
+
+#endif /* DIM3FLOAT */
