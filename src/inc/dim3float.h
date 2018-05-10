@@ -1,3 +1,6 @@
+#ifndef DIM3FLOAT_H
+#define DIM3FLOAT_H
+
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -11,15 +14,15 @@ struct dim3float
 
   void cout2()
   {
-	std::cout<<std::fixed;
-    std::cout<<std::setw(15)<<std::setprecision(4)<<x<<std::setw(15)<<std::setprecision(4)<<y<<std::setw(15)<<std::setprecision(4)<<z<<std::endl;
+    std::cout << std::fixed;
+    std::cout << std::setw(15) << std::setprecision(4) << x << std::setw(15) << std::setprecision(4) << y << std::setw(15) << std::setprecision(4) << z << std::endl;
   }
 
-  void new_pos(const dim3float &vel, float delta_t)
+  void new_pos(const dim3float &vel, const float delta_t)
   {
-    x = x + vel.x*delta_t;
-	y = y + vel.y*delta_t;
-	z = z + vel.z*delta_t;
+    x = x + vel.x * delta_t;
+    y = y + vel.y * delta_t;
+    z = z + vel.z * delta_t;
   }
 
   //Element wise addition dim3float .+ dim3float
@@ -70,3 +73,5 @@ struct dim3float
 typedef struct dim3float dim3float;
 
 //----
+
+#endif /* DIM3FLOAT */

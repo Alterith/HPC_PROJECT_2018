@@ -11,8 +11,8 @@
  * Created on 05 May 2018, 3:47 PM
  */
 
-#ifndef OCTREE_H
-#define OCTREE_H
+#ifndef BODY_H
+#define BODY_H
 #include "dim3float.h"
 
 /*
@@ -33,13 +33,12 @@ typedef struct body {
 } body;
 
 /*
- *  Mallocs the relevant values for the new node
- *  no new point is assigned by this statement just the cube bounds, and default values
+ *  Creates a new body with the given values;
  */
 
-body* malloc_body(double x_1, double y_1, double z_1, double x_2, double y_2, double z_2);
+body* create_body(double mass, dim3float com, dim3float vel);
 
 
 
-#endif /* OCTREE_H */
+#endif /* BODY_H */
 

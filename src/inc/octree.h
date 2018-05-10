@@ -14,6 +14,7 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 #include "dim3float.h"
+#include "body.h"
 
 /*
  *  octree node struct which contains:
@@ -85,8 +86,7 @@ void free_node(node* octree_node);
  * returns success code 0, fail 1
  */
 
-int insert_node(node* octree, float mass, float pos_x, float pos_y, float pos_z, float vel_x, float vel_y, float vel_z, int body_num);
-
+int insert_node(node* octree_node, body *b, int body_num);
 
 
 #endif /* OCTREE_H */
