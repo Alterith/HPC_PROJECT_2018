@@ -108,7 +108,7 @@ void update_point(node *octree, vector<body *> *point)
     if (octree->num_points == 1)
     {
         //put point in array
-        //octree->com.cout2();
+        octree->com.cout2();
         octree->com.new_pos(octree->vel, 0.1);
         int num_ele = octree->body_num;
         (*point)[num_ele]->mass = octree->mass;
