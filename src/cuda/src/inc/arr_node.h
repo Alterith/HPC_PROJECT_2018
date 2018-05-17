@@ -39,15 +39,25 @@ typedef struct arr_node {
     float force_y = 0;
     float force_z = 0;
 
+    //max
+  	float max_x = 0;
+    float max_y = 0;
+    float max_z = 0;
+
+    //min
+  	float min_x = 0;
+    float min_y = 0;
+    float min_z = 0;
+
 
     //center of mass
-	float com_x = 0;
+	  float com_x = 0;
     float com_y = 0;
     float com_z = 0;
 
 
     //velocity in each direction
-	float vel_x = 0;
+	  float vel_x = 0;
     float vel_y = 0;
     float vel_z = 0;
 
