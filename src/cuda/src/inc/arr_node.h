@@ -13,7 +13,6 @@
 
 #ifndef ARR_NODE_H
 #define ARR_NODE_H
-#include "dim3float.h"
 
 /*
  *  octree node struct which contains:
@@ -32,34 +31,34 @@ typedef struct arr_node {
     int furthest_right = -1;
 
     //mass
-    float mass;
+    double mass;
 
     //force
-  	float force_x = 0;
-    float force_y = 0;
-    float force_z = 0;
+  	double force_x = 0;
+    double force_y = 0;
+    double force_z = 0;
 
     //max
-  	float max_x = 0;
-    float max_y = 0;
-    float max_z = 0;
+  	double max_x = 0;
+    double max_y = 0;
+    double max_z = 0;
 
     //min
-  	float min_x = 0;
-    float min_y = 0;
-    float min_z = 0;
+  	double min_x = 0;
+    double min_y = 0;
+    double min_z = 0;
 
 
     //center of mass
-	  float com_x = 0;
-    float com_y = 0;
-    float com_z = 0;
+	double com_x = 0;
+    double com_y = 0;
+    double com_z = 0;
 
 
     //velocity in each direction
-	  float vel_x = 0;
-    float vel_y = 0;
-    float vel_z = 0;
+	double vel_x = 0;
+    double vel_y = 0;
+    double vel_z = 0;
 
 	//body number
 	int body_num;

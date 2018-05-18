@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   main.cpp
  * Author: alterith
  *
@@ -21,8 +21,18 @@
 #include "arr_node.h"
 
 #define THETA 0.5
-#define G 6.674*(pow(10,-11))
+#define G -6.674*(pow(10,-11))
 #define delta_t 0.1
+
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 
 using namespace std;
 
@@ -54,7 +64,7 @@ __device__ double size_region(arr_node a) {
     return size;
 }
 
-__global__ void body_update_kernel(int n, int num_ele, arr_node* arr_tree, int* pos){
+__global__ void body_update_kernel(int n, int num_ele, arr_node* arr_tree, int* pos, int bound){
     //obtain index
     int idx = threadIdx.x + blockIdx.x*blockDim.x;
     arr_node* singular_body;
@@ -71,15 +81,32 @@ __global__ void body_update_kernel(int n, int num_ele, arr_node* arr_tree, int* 
                 //if singular body no need to check if well seperated
                 if(arr_tree[i].body_num != -1){
                     // newtons law of universal gravitation
-                    double force_x = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3))*(singular_body->com_x - arr_tree[i].com_x);
-                    double force_y = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3))*(singular_body->com_y - arr_tree[i].com_y);
-                    double force_z = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3))*(singular_body->com_z - arr_tree[i].com_z);
+                    double force_x = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3)+ 0.3))*(singular_body->com_x - arr_tree[i].com_x);
+                    double force_y = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3)+ 0.3))*(singular_body->com_y - arr_tree[i].com_y);
+                    double force_z = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3)+ 0.3))*(singular_body->com_z - arr_tree[i].com_z);
+					                  
+					//printf("%.11lf\n", force_x);
+                    //10.10
+                    if((force_x!=force_x)|| (force_x>1000)){
+                      force_x = 1000;
+                      //printf("force_x\n");
+                    }
+                    if((force_y!=force_y)|| (force_y>1000)){
+                      force_y = 1000;
+                      //printf("force_y\n");
+                    }
+                    if((force_z!=force_z)|| (force_z>1000)){
+                      force_z = 1000;
+                      //printf("force_z\n");
+                    }
+
+					
                     singular_body->force_x += force_x;
                     singular_body->force_y += force_y;
                     singular_body->force_z += force_z;
                     //printf("Distance: %lf\n", dist);
                 }else{
-                    
+
                     //obtain perimeter of octant
                     double perimeter = size_region(arr_tree[i]);
                     //check if well separated
@@ -87,32 +114,100 @@ __global__ void body_update_kernel(int n, int num_ele, arr_node* arr_tree, int* 
                     if ((perimeter / dist) <= THETA) {
                         // we may treat the nodes in this octant as one and proceed
                         //newtons law of universal gravitation: (G*m1*m2/r^3)*r_(x,y,z)
-                        double force_x = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3))*(singular_body->com_x - arr_tree[i].com_x);
-                        double force_y = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3))*(singular_body->com_y - arr_tree[i].com_y);
-                        double force_z = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3))*(singular_body->com_z - arr_tree[i].com_z);
-                        singular_body->force_x += force_x;
+                        double force_x = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3)+ 0.3))*(singular_body->com_x - arr_tree[i].com_x);
+                        double force_y = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3)+ 0.3))*(singular_body->com_y - arr_tree[i].com_y);
+                        double force_z = (double) ((G * singular_body->mass * arr_tree[i].mass) / ((double)pow(dist, 3)+ 0.3))*(singular_body->com_z - arr_tree[i].com_z);
+
+						if((force_x!=force_x)|| (force_x>1000)){
+		                  force_x = 1000;
+		                  //printf("force_x\n");
+		                }
+		                if((force_y!=force_y)|| (force_y>1000)){
+		                  force_y = 1000;
+		                  //printf("force_y\n");
+		                }
+		                if((force_z!=force_z)|| (force_z>1000)){
+		                  force_z = 1000;
+		                  //printf("force_z\n");
+		                }
+
+						if((force_x!=force_x)){
+		                  //force_x = 1000;
+		                  printf("force_x\n");
+		                }
+		                if((force_y!=force_y)){
+		                  //force_y = 1000;
+		                  printf("force_y\n");
+		                }
+		                if((force_z!=force_z)){
+		                  //force_z = 1000;
+		                  printf("force_z\n");
+		                }
+
+						singular_body->force_x += force_x;
                         singular_body->force_y += force_y;
                         singular_body->force_z += force_z;
+
                         //skip children
                         //printf("skipped\n");
                         i = arr_tree[i].furthest_right;
                     }
-                }        
+                }
             }
         }
         __syncthreads();
         //TODO: do point update
         //do velocity calc change here
-        singular_body->vel_x = singular_body->vel_x + (singular_body->force_x/singular_body->mass)*delta_t;
-        singular_body->vel_y = singular_body->vel_y + (singular_body->force_y/singular_body->mass)*delta_t;
-        singular_body->vel_z = singular_body->vel_z + (singular_body->force_z/singular_body->mass)*delta_t;
+        singular_body->vel_x = (double)fmod((double)(singular_body->vel_x + (singular_body->force_x/singular_body->mass)*delta_t), (double)100.0);
+        singular_body->vel_y = (double)fmod((double)(singular_body->vel_y + (singular_body->force_y/singular_body->mass)*delta_t), (double)100.0);
+        singular_body->vel_z = (double)fmod((double)(singular_body->vel_z + (singular_body->force_z/singular_body->mass)*delta_t), (double)100.0);
         //update position
-        singular_body->com_x = singular_body->com_x + singular_body->vel_x*delta_t;
+		singular_body->com_x = singular_body->com_x + singular_body->vel_x*delta_t;
         singular_body->com_y = singular_body->com_y + singular_body->vel_y*delta_t;
         singular_body->com_z = singular_body->com_z + singular_body->vel_z*delta_t;
+
+
+		while(abs(singular_body->com_x)>bound){
+			double rem = 0;
+			if(singular_body->com_x > bound){
+				rem = singular_body->com_x - bound;
+				singular_body->com_x = (-1)*bound + (double)fmod(rem, (double)(bound-1));
+			}else if(singular_body->com_x < (-1)*bound){
+				rem = abs(singular_body->com_x)-abs(bound);
+				singular_body->com_x = bound - (float)fmod(rem, (double)bound);
+			}
+			//printf("%lf\n", rem);
+			//std::cout<<rem<<std::endl;
+		}
+
+		while(abs(singular_body->com_y)>bound){
+			double rem = 0;
+			if(singular_body->com_y > bound){
+				rem = singular_body->com_y - bound;
+				singular_body->com_y = (-1)*bound + (double)fmod(rem, (double)(bound-1));
+			}else if(singular_body->com_y < (-1)*bound){
+				rem = abs(singular_body->com_y)-abs(bound);
+				singular_body->com_y = bound - (double)fmod(rem, (double)(bound-1));
+			}
+			//printf("%lf\n", rem);
+			//std::cout<<rem<<std::endl;
+		}
+
+		while(abs(singular_body->com_z)>bound){
+			double rem = 0;
+			if(singular_body->com_z > bound){
+				rem = singular_body->com_z - bound;
+				singular_body->com_z = (-1)*bound + (double)fmod(rem, (double)(bound-1));
+			}else if(singular_body->com_z < (-1)*bound){
+				rem = abs(singular_body->com_z)-abs(bound);
+				singular_body->com_z = bound - (double)fmod(rem, (double)(bound-1));
+			}
+			//printf("%lf\n", rem);
+			//std::cout<<rem<<std::endl;
+		}
     }
 }
- 
+
  /*
   *
   */
@@ -121,9 +216,9 @@ int main(int argc, char **argv)
 {
 
     int i = 0;
-    int bound = 8;
-    const int num_ele = 4000;
-    int iterations = 100;
+    int bound = 16;
+    const int num_ele = 4096;
+    int iterations = 128;
     srand(time(NULL)); //just seed the generator
 
     //mass, pos x,y,z, vel x,y,z
@@ -152,7 +247,7 @@ int main(int argc, char **argv)
         (*point)[i] = (newBody);
     }
     //insert into tree and run
-    for (int i = 0; i < iterations; i++)
+    for (int j = 0; j < iterations; j++)
     {
         node *test = malloc_node(-1 * bound, -1 * bound, -1 * bound, bound, bound, bound);
         for (int i = 0; i < num_ele; i++)
@@ -186,8 +281,8 @@ int main(int argc, char **argv)
         //device memory allocation
         cudaMalloc((void **)&d_arr_tree, n*sizeof(arr_node));
         cudaMalloc((void **)&d_body_pos, num_ele*sizeof(int));
-        
-        int nblocks  = 3;
+
+        int nblocks  = 8;
         int nthreads = num_ele/nblocks;
         //check if enough threads exist
         if(nthreads*nblocks != num_ele){
@@ -197,10 +292,20 @@ int main(int argc, char **argv)
         //copy relevant data to device
         cudaMemcpy(d_arr_tree, h_arr_tree, n*sizeof(arr_node), cudaMemcpyHostToDevice);
         cudaMemcpy(d_body_pos, h_body_pos, num_ele*sizeof(int), cudaMemcpyHostToDevice);
-        
-        body_update_kernel<<<nblocks,nthreads>>>(n, num_ele, d_arr_tree, d_body_pos);
-        cudaDeviceSynchronize();
+
+        body_update_kernel<<<nblocks,nthreads>>>(n, num_ele, d_arr_tree, d_body_pos, bound);
+        gpuErrchk( cudaPeekAtLastError() );
+		gpuErrchk( cudaDeviceSynchronize() );
+		//cudaDeviceSynchronize();
+		//for(int k = 0; k < num_ele; k++){
+            //printf("Host Before: %lf\t%lf\t%lf\n", h_arr_tree[h_body_pos[k]].com_x, h_arr_tree[h_body_pos[k]].com_y,h_arr_tree[h_body_pos[k]].com_z);
+        //}
+		printf("\n\n");
+        //end of array representation testing
         cudaMemcpy(h_arr_tree, d_arr_tree, n*sizeof(arr_node), cudaMemcpyDeviceToHost);
+		//for(int k = 0; k < num_ele; k++){
+            //printf("Host After: %lf\t%lf\t%lf\n", h_arr_tree[h_body_pos[k]].com_x, h_arr_tree[h_body_pos[k]].com_y,h_arr_tree[h_body_pos[k]].com_z);
+        //}
         //end of array representation testing
 
         //insert function updating the bodies
@@ -211,6 +316,7 @@ int main(int argc, char **argv)
         free(h_body_pos);
         cudaFree(d_arr_tree);
         cudaFree(d_body_pos);
+		cout<<j<<endl;
     }/*
     for(int i = 0; i<100;i++){
         cout<<(((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound)<<endl;
@@ -227,6 +333,7 @@ void update_point(arr_node* arr_tree, int* h_body_pos, vector<body *> *point, in
         //get vector index
         int idx = temp.body_num;
         //allocate updated values
+		//(*point)[idx]->com.cout2();
         (*point)[idx]->mass = temp.mass;
         (*point)[idx]->com.x = temp.com_x;
         (*point)[idx]->com.y = temp.com_y;
@@ -234,6 +341,8 @@ void update_point(arr_node* arr_tree, int* h_body_pos, vector<body *> *point, in
         (*point)[idx]->vel.x = temp.vel_x;
         (*point)[idx]->vel.y = temp.vel_y;
         (*point)[idx]->vel.z = temp.vel_z;
+		if(i == 3028)
+			(*point)[idx]->com.cout2();
     }
 }
 

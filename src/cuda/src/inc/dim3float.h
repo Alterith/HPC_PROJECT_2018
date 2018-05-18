@@ -9,16 +9,16 @@
 //----
 struct dim3float
 {
-  float x, y, z;
-  dim3float(float vx = 0, float vy = 0, float vz = 0) : x(vx), y(vy), z(vz) {}
+  double x, y, z;
+  dim3float(double vx = 0, double vy = 0, double vz = 0) : x(vx), y(vy), z(vz) {}
 
   void cout2()
   {
     std::cout << std::fixed;
-    std::cout << std::setw(15) << std::setprecision(4) << x << std::setw(15) << std::setprecision(4) << y << std::setw(15) << std::setprecision(4) << z << std::endl;
+    std::cout << std::setw(11) << std::setprecision(4) << x << std::setw(11) << std::setprecision(4) << y << std::setw(11) << std::setprecision(4) << z << std::endl;
   }
 
-  void new_pos(const dim3float &vel, const float delta_t)
+  void new_pos(const dim3float &vel, const double delta_t)
   {
     x = x + vel.x * delta_t;
     y = y + vel.y * delta_t;
@@ -28,44 +28,44 @@ struct dim3float
   //Element wise addition dim3float .+ dim3float
   dim3float operator+(const dim3float &a)
   {
-    float vx = x + a.x;
-    float vy = y + a.y;
-    float vz = z + a.z;
+    double vx = x + a.x;
+    double vy = y + a.y;
+    double vz = z + a.z;
     return dim3float(vx, vy, vz);
   }
 
   //Element wise subtraction dim3float .- dim3float
   dim3float operator-(const dim3float &a)
   {
-    float vx = x - a.x;
-    float vy = y - a.y;
-    float vz = z - a.z;
+    double vx = x - a.x;
+    double vy = y - a.y;
+    double vz = z - a.z;
     return dim3float(vx, vy, vz);
   }
 
   //Element wise multiplication dim3float .* dim3float
   dim3float operator*(const dim3float &a)
   {
-    float vx = x * a.x;
-    float vy = y * a.y;
-    float vz = z * a.z;
+    double vx = x * a.x;
+    double vy = y * a.y;
+    double vz = z * a.z;
     return dim3float(vx, vy, vz);
   }
   //Element wise power dim3float .^ int
   dim3float operator^(const int a)
   {
-    float vx = pow(x, a);
-    float vy = pow(y, a);
-    float vz = pow(z, a);
+    double vx = pow(x, a);
+    double vy = pow(y, a);
+    double vz = pow(z, a);
     return dim3float(vx, vy, vz);
   }
 
   //Constant multiplication dim3float .* constant
   dim3float operator|(const float a)
   {
-    float vx = x * a;
-    float vy = y * a;
-    float vz = z * a;
+    double vx = x * a;
+    double vy = y * a;
+    double vz = z * a;
     return dim3float(vx, vy, vz);
   }
 };
