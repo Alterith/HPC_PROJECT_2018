@@ -18,11 +18,46 @@ struct dim3float
     std::cout << std::setw(15) << std::setprecision(4) << x << std::setw(15) << std::setprecision(4) << y << std::setw(15) << std::setprecision(4) << z << std::endl;
   }
 
-  void new_pos(const dim3float &vel, const float delta_t)
+  void new_pos(const dim3float &vel, const float delta_t, int bound)
   {
     x = x + vel.x * delta_t;
+	while(abs(x)>bound){
+		double rem = 0;
+		if(x > bound){
+			rem = x - bound;
+			x = (-1)*bound + rem;
+		}else if(x < (-1)*bound){
+			rem = abs(x)-abs(bound);
+			x = bound - rem;
+		}
+		//std::cout<<rem<<std::endl;
+	}
+	
     y = y + vel.y * delta_t;
+	while(abs(y)>bound){
+		double rem = 0;
+		if(y > bound){
+			rem = y - bound;
+			y = (-1)*bound + rem;
+		}else if(y < (-1)*bound){
+			rem = abs(y)-abs(bound);
+			y = bound - rem;
+		}
+		//std::cout<<rem<<std::endl;
+	}
+
     z = z + vel.z * delta_t;
+	while(abs(z)>bound){
+		double rem = 0;
+		if(z > bound){
+			rem = z - bound;
+			z = (-1)*bound + rem;
+		}else if(z < (-1)*bound){
+			rem = abs(z)-abs(bound);
+			z = bound - rem;
+		}
+		//std::cout<<rem<<std::endl;
+	}
   }
 
   //Element wise addition dim3float .+ dim3float

@@ -33,7 +33,7 @@ typedef struct node {
     int num_points;
 
     // 8 children pointers
-    struct node* children[8];
+    struct node *children[8];
 
     //mass
     float mass;

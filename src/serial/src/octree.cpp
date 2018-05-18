@@ -18,7 +18,6 @@ node* malloc_node(float x_1, float y_1, float z_1, float x_2, float y_2, float z
     node* octree_node = (node*) malloc(sizeof (node));
     //node* octree_node = new node;
 
-
     //initialize children to null
     for (int i = 0; i < 8; i++) {
         octree_node->children[i] = nullptr;

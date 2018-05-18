@@ -27,14 +27,14 @@ using namespace std;
  */
 
 void update_position(node *octree, node *root);
-void update_point(node *octree, vector<body *> *point);
+void update_point(node *octree, vector<body *> *point, int bound);
 
 int main(int argc, char **argv)
 {
 
     int i = 0;
-    int bound = 512;
-    const int num_ele = 5;
+    int bound = 16;
+    const int num_ele = 4000;
     int iterations = 100;
     srand(time(NULL)); //just seed the generator
 
@@ -64,23 +64,26 @@ int main(int argc, char **argv)
         (*point)[i] = (newBody);
     }
     //insert into tree and run
-    for (int i = 0; i < iterations; i++)
+    for (int j = 0; j < iterations; j++)
     {
         node *test = malloc_node(-1 * bound, -1 * bound, -1 * bound, bound, bound, bound);
-        //cout << test->min.x << " " << test->min.y << " " << test->min.z << endl;
-        //cout << test->mid.x << " " << test->mid.y << " " << test->mid.z << endl;
-        //cout << test->max.x << " " << test->max.y << " " << test->max.z << endl << endl;
         for (int i = 0; i < num_ele; i++)
         {
             int ele = insert_node(test, (*point)[i], i);
         }
+		cout<<j<<": calculating force"<<endl;
         update_position(test, test);
-        update_point(test, point);
+		cout<<j<<": updating point"<<endl;
+        update_point(test, point, bound);
         //cout<<"updated points"<<endl;
         free_node(test);
         //cout<<"free tree"<<endl;
     }
 
+    for (i = 0; i < num_ele; i++)
+    {
+        free((*point)[i]);
+    }
     return 0;
 }
 
@@ -103,13 +106,13 @@ void update_position(node *octree, node *root)
 }
 
 //to start pass num_ele = 0
-void update_point(node *octree, vector<body *> *point)
+void update_point(node *octree, vector<body *> *point, int bound)
 {
     if (octree->num_points == 1)
     {
         //put point in array
         octree->com.cout2();
-        octree->com.new_pos(octree->vel, 0.1);
+        octree->com.new_pos(octree->vel, 0.01, bound);
         int num_ele = octree->body_num;
         (*point)[num_ele]->mass = octree->mass;
         (*point)[num_ele]->com = octree->com;
@@ -121,7 +124,7 @@ void update_point(node *octree, vector<body *> *point)
         {
             if (octree->children[i])
             {
-                update_point(octree->children[i], point);
+                update_point(octree->children[i], point, bound);
             }
         }
     }
