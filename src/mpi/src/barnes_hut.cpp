@@ -8,7 +8,7 @@
 #include <iostream>
 
 #define THETA 0.5
-#define G 6.674*(pow(10,-11))
+#define G 6.674*(pow(10,-8))
 #define delta_t 0.1
 
 //obtain the distance between 2 nodes com a will represent the current node and b will represent an arbitrary node in the tree
@@ -32,9 +32,10 @@ void calculate_force(node* a, node* b, int phase) {
         double d = distance_com(a, b);
         //only 1 element thus no need to check if well separated
         if (b->num_points == 1) {
-            double force_x = (double) ((G * a->mass * b->mass) / (double)pow(d, 3))*(a->com.x - b->com.x);
-            double force_y = (double) ((G * a->mass * b->mass) / (double)pow(d, 3))*(a->com.y - b->com.y);
-            double force_z = (double) ((G * a->mass * b->mass) / (double)pow(d, 3))*(a->com.z - b->com.z);
+            double force_x = -(double) ((G * a->mass * b->mass) / (double)pow(d, 3))*(a->com.x - b->com.x);
+            double force_y = -(double) ((G * a->mass * b->mass) / (double)pow(d, 3))*(a->com.y - b->com.y);
+            double force_z = -(double) ((G * a->mass * b->mass) / (double)pow(d, 3))*(a->com.z - b->com.z);
+            //std::cout << force_x << " " << force_y << " " << force_z << std::endl;
             a->force.x += force_x;
             a->force.y += force_y;
             a->force.z += force_z;

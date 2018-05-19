@@ -86,7 +86,7 @@ void free_node(node* octree_node);
  * returns success code 0, fail 1
  */
 
-int insert_node(node* octree_node, body *b, int body_num);
+int insert_node(node* octree_node, body b, int body_num);
 
 
 #endif /* OCTREE_H */
