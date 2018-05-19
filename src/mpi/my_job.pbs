@@ -1,0 +1,40 @@
+#!/bin/sh
+### Set the job name
+#PBS -N Barnes_Hut_N_Body
+### Log files
+#PBS -e /home-216/kweiher/HPC_PROJECT_2018/src/mpi/my_job.err
+#PBS -o /home-216/kweiher/HPC_PROJECT_2018/src/mpi/my_job.log
+### Queue name (batch)
+#PBS -q batch
+### Request 1 node, the maximum time for your job.
+#PBS -l nodes=32:ppn=2,walltime=0:25:10
+echo ------------------------------------------------------
+echo -n 'Job is running on node '; cat $PBS_NODEFILE
+echo ------------------------------------------------------
+echo PBS: qsub is running on $PBS_O_HOST
+echo PBS: originating queue is $PBS_O_QUEUE
+echo PBS: executing queue is $PBS_QUEUE
+echo PBS: working directory is $PBS_O_WORKDIR
+echo PBS: execution mode is $PBS_ENVIRONMENT
+echo PBS: job identifier is $PBS_JOBID
+echo PBS: job name is $PBS_JOBNAME
+echo PBS: node file is $PBS_NODEFILE
+echo PBS: current home directory is $PBS_O_HOME
+echo PBS: PATH = $PBS_O_PATH
+echo ------------------------------------------------------
+cd $PBS_O_WORKDIR
+make clean
+make
+//mpicc -o ring2 mpi_ring_v2.c
+echo 1 Node 1 Core
+./project_mpi.out
+echo 4 Node 8 Core
+mpirun -n 8 ./project_mpi.out
+echo 8 Node 16 Core
+mpirun -n 16 ./project_mpi.out
+echo 16 Node 32 Core
+mpirun -n 32 ./project_mpi.out
+echo 32 Node 64 Core
+mpirun -n 64 ./project_mpi.out
+echo 64 Node 128 Core
+mpirun -n 128 ./project_mpi.out

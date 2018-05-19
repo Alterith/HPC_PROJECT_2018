@@ -36,7 +36,7 @@ typedef struct body {
  *  Creates a new body with the given values;
  */
 
-body* create_body(double mass, dim3float com, dim3float vel);
+body create_body(double mass, dim3float com, dim3float vel);
 
 
 

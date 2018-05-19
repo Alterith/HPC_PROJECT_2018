@@ -1,10 +1,10 @@
-CC=g++
-CFLAGS=-std=c++11 -g -O0
+CC=mpicxx
+CFLAGS=-std=c++11 -g
 INC_USER=src/inc
 
-all: clean project
+all: clean project_mpi
 
-project: 
+project_mpi: 
 	$(CC) $(CFLAGS) -I $(INC_USER) src/*.cpp -o $@.out
 
 clean:
