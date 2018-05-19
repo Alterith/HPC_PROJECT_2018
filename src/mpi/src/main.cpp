@@ -23,11 +23,10 @@
 
 using namespace std;
 
-/*
- * 
- */
-
-const int num_ele = 256;
+// Settings
+const int num_ele = 4096;
+const int iterations = 32;
+const int bound = 32;
 
 void update_position(node *octree, node *root, int world_rank, int body_count);
 void update_point(node *octree, array<body, num_ele> *point, int bound);
@@ -39,9 +38,9 @@ double tScratch2 = 0;
 
 int main(int argc, char **argv)
 {
-    int bound = 32;
+    
 
-    int iterations = 32;
+    
 
     /*
     MPI INITIALISATION
@@ -59,10 +58,10 @@ int main(int argc, char **argv)
     /*
     MPI INITIALISATION COMPLETE
     */
-
+    MPI_Barrier(MPI_COMM_WORLD);
     if (world_rank == 0)
     {
-        t1 = MPI_Wtime();
+        t1 = MPI::Wtime();
     }
 
     ofstream positionFile;
@@ -135,14 +134,16 @@ int main(int argc, char **argv)
     //insert into tree and run
     for (int j = 0; j < iterations; j++)
     {
+        MPI_Barrier(MPI_COMM_WORLD);
         if (world_rank == 0)
         {
-            tScratch1 = MPI_Wtime();
+            tScratch1 = MPI::Wtime();
         }
         MPI_Bcast((point->data()), num_ele, mpi_body_type, 0, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
         if (world_rank == 0)
         {
-            tOverhead += MPI_Wtime() - tScratch1;
+            tOverhead += MPI::Wtime() - tScratch1;
         }
         node *test = malloc_node(-1 * bound, -1 * bound, -1 * bound, bound, bound, bound);
 
@@ -160,7 +161,7 @@ int main(int argc, char **argv)
 
         if (world_rank == 0)
         {
-            tScratch1 = MPI_Wtime();
+            tScratch1 = MPI::Wtime();
         }
         for (int stride = 1; stride < world_size; stride *= 2)
         {
@@ -188,9 +189,10 @@ int main(int argc, char **argv)
             MPI_Barrier(MPI_COMM_WORLD);
             if (world_rank == 0)
             {
-                tOverhead += MPI_Wtime() - tScratch1;
+                tOverhead += MPI::Wtime() - tScratch1;
             }
         }
+        /*
         if (world_rank == 0)
         {
             for (int k = 0; k < point->size(); k++)
@@ -199,13 +201,17 @@ int main(int argc, char **argv)
                 //positionFile << (*point)[k].com.x << "|" << (*point)[k].com.y << "|" << (*point)[k].com.z << endl;
             }
             //positionFile << endl;
+            
         }
+        */
     }
     positionFile.close();
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     if (world_rank == 0)
     {
-        t2 = MPI_Wtime();
+        t2 = MPI::Wtime();
         cout << "Total Time: " << t2 - t1 << endl;
         cout << "Overhead Time: " << tOverhead << endl;
     }
