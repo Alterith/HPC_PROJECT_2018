@@ -24,23 +24,22 @@
 using namespace std;
 
 // Settings
-const int num_ele = 4096;
+const int num_ele = 1024;
 const int iterations = 32;
 const int bound = 32;
+const int writeOut = 0;
 
 void update_position(node *octree, node *root, int world_rank, int body_count);
-void update_point(node *octree, array<body, num_ele> *point, int bound);
-
-double t1, t2;
-double tOverhead = 0;
-double tScratch1 = 0;
-double tScratch2 = 0;
+void update_point(node *octree, array<body, num_ele> *point, int bound, int world_rank, int body_count);
 
 int main(int argc, char **argv)
 {
-    
-
-    
+    // Timing
+    double t1, t2;
+    double tOverhead = 0;
+    double tScratch1 = 0;
+    double tScratch2 = 0;
+    int bodyCount;
 
     /*
     MPI INITIALISATION
@@ -58,52 +57,61 @@ int main(int argc, char **argv)
     /*
     MPI INITIALISATION COMPLETE
     */
+
+    // Calculate the number of bodies that each process will handle
+    bodyCount = (num_ele / world_size);
+
+    // Start timing runtime
     MPI_Barrier(MPI_COMM_WORLD);
     if (world_rank == 0)
     {
         t1 = MPI::Wtime();
     }
 
+    // Open file to export point data, only if setting is set
     ofstream positionFile;
-    positionFile.open("../Visual/positionFile.txt");
+    if (writeOut == 1)
+    {
 
-    srand(time(NULL)); //just seed the generator
+        positionFile.open("../Visual/positionFile.txt");
+    }
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    // Create array that holds points, and find it's size
     unsigned int vecMemorySize = sizeof(array<body, num_ele>) + (sizeof(body) * num_ele);
     array<body, num_ele> *point = new array<body, num_ele>;
 
-    //cout << sizeof(*point) << " ";
-    //cout << vecMemorySize << endl;
-
+    // Point creation, only run on one process
     if (world_rank == 0)
     {
 
-        //create point array
+        // Create point array
         for (int i = 0; i < num_ele; i++)
         {
-            //mass
+            // Mass
             double mass = (float)((rand() % 200000000) / 10.0) + 1.0;
 
-            //position
+            // Position
             dim3float pos(
                 (float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound,
                 (float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound,
                 (float)((rand() / (float)RAND_MAX) * 2 * bound) - (float)bound);
 
-            //velocity
+            // Velocity
             dim3float vel(
                 0.0,  //(float)((rand() % 40000) - 20000) / 1000.0,
                 0.0,  //(float)((rand() % 40000) - 20000) / 1000.0,
                 0.0); //(float)((rand() % 40000) - 20000) / 1000.0);
 
-            //insert
+            // Insert into point array
             body newBody = create_body(mass, pos, vel);
             (*point)[i] = (newBody);
         }
     }
 
-    int bodyCount = (num_ele / world_size);
-
-    /* create a type for struct dim3float */
+    // Create a type for struct dim3float
     const int nitemsDim3float = 3;
     int blocklengthsD[3] = {1, 1, 1};
     MPI_Datatype typesD[3] = {MPI_FLOAT, MPI_INT, MPI_FLOAT};
@@ -117,7 +125,7 @@ int main(int argc, char **argv)
     MPI_Type_create_struct(nitemsDim3float, blocklengthsD, offsetsD, typesD, &mpi_dim3float_type);
     MPI_Type_commit(&mpi_dim3float_type);
 
-    /* create a type for struct body */
+    // Create a type for struct body
     const int nitemsBody = 3;
     int blocklengthsB[3] = {1, 1, 1};
     MPI_Datatype typesB[3] = {MPI_DOUBLE, mpi_dim3float_type, mpi_dim3float_type};
@@ -131,42 +139,60 @@ int main(int argc, char **argv)
     MPI_Type_create_struct(nitemsBody, blocklengthsB, offsetsB, typesB, &mpi_body_type);
     MPI_Type_commit(&mpi_body_type);
 
-    //insert into tree and run
+    // Run simulation for the set number of iterations
     for (int j = 0; j < iterations; j++)
     {
+        // Start timing MPI broadcast overhead
         MPI_Barrier(MPI_COMM_WORLD);
         if (world_rank == 0)
         {
             tScratch1 = MPI::Wtime();
         }
+
+        // Broadcast the body array to all processes
         MPI_Bcast((point->data()), num_ele, mpi_body_type, 0, MPI_COMM_WORLD);
+
+        // Stop timing MPI broadcast overhead and add to collective overhead sum
         MPI_Barrier(MPI_COMM_WORLD);
         if (world_rank == 0)
         {
             tOverhead += MPI::Wtime() - tScratch1;
         }
-        node *test = malloc_node(-1 * bound, -1 * bound, -1 * bound, bound, bound, bound);
 
+        // Create headnode of octree
+        node *headNode = malloc_node(-1 * bound, -1 * bound, -1 * bound, bound, bound, bound);
+
+        // Insert the points in to the tree
         for (int i = 0; i < num_ele; i++)
         {
-            int ele = insert_node(test, (*point)[i], i);
+            int ele = insert_node(headNode, (*point)[i], i);
         }
-        update_position(test, test, world_rank, bodyCount);
-        update_point(test, point, bound);
-        //cout<<"updated points"<<endl;
-        free_node(test);
-        //cout<<"free tree"<<endl;
 
+        // Update positions of the nodes in the tree, then update the points based on the tree
+        // These
+        update_position(headNode, headNode, world_rank, bodyCount);
+        update_point(headNode, point, bound, world_rank, bodyCount);
+
+        // Free the tree
+        free_node(headNode);
+
+        // A process should only send data once, this is a flag that gets switched ensuring a
+        // node does not send more than once
         bool sent = false;
 
+        // Time MPI reduction overhead
         if (world_rank == 0)
         {
             tScratch1 = MPI::Wtime();
         }
+
+        // Repeatedly copy unique points from different processes
         for (int stride = 1; stride < world_size; stride *= 2)
         {
+            // Calucalte the amount of points to send at each iteration of the reduction, doubles every time
             int width = (stride) * (num_ele / world_size);
 
+            // Processes that receive the updated points
             if (world_rank % (2 * stride) == 0)
             {
                 body *section = &(point->data()[((world_rank + stride) * (width / stride))]);
@@ -174,6 +200,7 @@ int main(int argc, char **argv)
                 MPI_Recv(section, width, mpi_body_type, world_rank + stride, width, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 //cout << "success:   receive:    " << world_rank << "<-" << world_rank + stride << endl;
             }
+            // Processes that send the updated points
             else
             {
                 if (!sent)
@@ -186,29 +213,34 @@ int main(int argc, char **argv)
                 }
             }
 
+            // Finish timing the MPI reduction and add to cumulative sum
             MPI_Barrier(MPI_COMM_WORLD);
             if (world_rank == 0)
             {
                 tOverhead += MPI::Wtime() - tScratch1;
             }
         }
-        /*
-        if (world_rank == 0)
+
+        // If writing to file, this will print the list of points to the file
+        if ((world_rank == 0) && (writeOut == 1))
         {
             for (int k = 0; k < point->size(); k++)
             {
 
-                //positionFile << (*point)[k].com.x << "|" << (*point)[k].com.y << "|" << (*point)[k].com.z << endl;
+                positionFile << (*point)[k].com.x << "|" << (*point)[k].com.y << "|" << (*point)[k].com.z << endl;
             }
-            //positionFile << endl;
-            
+            positionFile << endl;
         }
-        */
     }
-    positionFile.close();
 
+    // Close the file when no more updates are going to be written
+    if (writeOut == 1)
+    {
+        positionFile.close();
+    }
+
+    // Finish timing the overall time of the simulation
     MPI_Barrier(MPI_COMM_WORLD);
-
     if (world_rank == 0)
     {
         t2 = MPI::Wtime();
@@ -216,15 +248,18 @@ int main(int argc, char **argv)
         cout << "Overhead Time: " << tOverhead << endl;
     }
 
+    // Finish with any MPI
     MPI_Finalize();
 
     return 0;
 }
 
+// Update the nodes in the octree
 void update_position(node *octree, node *root, int world_rank, int body_count)
 {
     if (octree->num_points == 1)
     {
+        // Only calulate force if the point lies withing the processes' allocated set of points
         if ((octree->body_num >= world_rank * body_count) && (octree->body_num < (world_rank + 1) * body_count))
         {
             calculate_force(octree, root, 1);
@@ -242,18 +277,23 @@ void update_position(node *octree, node *root, int world_rank, int body_count)
     }
 }
 
-//to start pass num_ele = 0
-void update_point(node *octree, array<body, num_ele> *point, int bound)
+// Update the points based on the updated tree with force calculations
+void update_point(node *octree, array<body, num_ele> *point, int bound, int world_rank, int body_count)
 {
     if (octree->num_points == 1)
     {
-        //put point in array
-        //octree->vel.cout2();
-        octree->com.new_pos(octree->vel, 0.1, bound);
-        int num_ele = octree->body_num;
-        (*point)[num_ele].mass = octree->mass;
-        (*point)[num_ele].com = octree->com;
-        (*point)[num_ele].vel = octree->vel;
+        // Only update the points that are allocated to a process
+        if ((octree->body_num >= world_rank * body_count) && (octree->body_num < (world_rank + 1) * body_count))
+        {
+
+            //put point in array
+            //octree->vel.cout2();
+            octree->com.new_pos(octree->vel, 0.1, bound);
+            int num_ele = octree->body_num;
+            (*point)[num_ele].mass = octree->mass;
+            (*point)[num_ele].com = octree->com;
+            (*point)[num_ele].vel = octree->vel;
+        }
     }
     else
     {
@@ -261,7 +301,7 @@ void update_point(node *octree, array<body, num_ele> *point, int bound)
         {
             if (octree->children[i])
             {
-                update_point(octree->children[i], point, bound);
+                update_point(octree->children[i], point, bound, world_rank, body_count);
             }
         }
     }
