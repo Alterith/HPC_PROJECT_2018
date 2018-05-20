@@ -1,5 +1,5 @@
 CC=mpicxx
-CFLAGS=-std=c++11 -g
+CFLAGS=-std=c++11 -O3 -march=native
 INC_USER=src/inc
 
 all: clean project_mpi
