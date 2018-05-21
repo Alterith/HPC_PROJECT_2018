@@ -24,10 +24,10 @@
 using namespace std;
 
 // Settings
-const int num_ele = 1024;
-const int iterations = 32;
+const int num_ele = 512;
+const int iterations = 1024;
 const int bound = 32;
-const int writeOut = 0;
+const int writeOut = 1;
 
 void update_position(node *octree, node *root, int world_rank, int body_count);
 void update_point(node *octree, array<body, num_ele> *point, int bound, int world_rank, int body_count);
@@ -91,7 +91,8 @@ int main(int argc, char **argv)
         for (int i = 0; i < num_ele; i++)
         {
             // Mass
-            double mass = (float)((rand() % 200000000) / 10.0) + 1.0;
+            //double mass = (float)((rand() % 200000000) / 10.0) + 1.0;
+            double mass = (float)20000000;
 
             // Position
             dim3float pos(
@@ -110,6 +111,8 @@ int main(int argc, char **argv)
             (*point)[i] = (newBody);
         }
     }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // Create a type for struct dim3float
     const int nitemsDim3float = 3;
@@ -169,7 +172,6 @@ int main(int argc, char **argv)
         }
 
         // Update positions of the nodes in the tree, then update the points based on the tree
-        // These
         update_position(headNode, headNode, world_rank, bodyCount);
         update_point(headNode, point, bound, world_rank, bodyCount);
 
@@ -221,7 +223,9 @@ int main(int argc, char **argv)
             }
         }
 
+        
         // If writing to file, this will print the list of points to the file
+        MPI_Barrier(MPI_COMM_WORLD);
         if ((world_rank == 0) && (writeOut == 1))
         {
             for (int k = 0; k < point->size(); k++)
@@ -244,8 +248,9 @@ int main(int argc, char **argv)
     if (world_rank == 0)
     {
         t2 = MPI::Wtime();
-        cout << "Total Time: " << t2 - t1 << endl;
         cout << "Overhead Time: " << tOverhead << endl;
+        cout << "Total Time: " << t2 - t1 << endl;
+        
     }
 
     // Finish with any MPI
