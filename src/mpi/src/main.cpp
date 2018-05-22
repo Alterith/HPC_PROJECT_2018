@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     if (writeOut == 1)
     {
 
-        positionFile.open("../Visual/positionFile.txt");
+        positionFile.open("../visual/positionFile.txt");
     }
 
     // Seed the random number generator

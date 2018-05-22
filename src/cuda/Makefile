@@ -1,5 +1,5 @@
 CC=nvcc
-CFLAGS=-std=c++11 -rdc=true
+CFLAGS=-std=c++11 -rdc=true -D_MWAITXINTRIN_H_INCLUDED
 INC_USER=src/inc
 INC=inc
 

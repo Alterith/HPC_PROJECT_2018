@@ -13,6 +13,8 @@ Generate the data:
 make -C ../mpi
 mpirun ../mpi/project_mpi.out
 
+Note that the same may be done in either cuda or serial. just make the files as per normal and the same output will be achieved.
+
 2. Using the python notebook 'Generate_Images.ipynb' ( open in Jupyter, JupyterLab), set the 
 settings at the top of the file to the same that the 'main.cpp' file has
 

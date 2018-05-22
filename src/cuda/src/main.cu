@@ -44,6 +44,8 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 using namespace std;
 
+const int writeOut = 1;
+
 
 /*
  * function definitions
@@ -209,6 +211,12 @@ __global__ void body_update_kernel(int n, int num_ele, arr_node* arr_tree, int* 
 
 int main(int argc, char **argv)
 {
+	// Open file to export point data, only if setting is set
+    ofstream positionFile;
+    if (writeOut == 1)
+    {
+        positionFile.open("../visual/positionFile.txt");
+    }
 	clock_t start_total = clock(), end_total;
 	//first cuda call takes longer so this is to allow for fair comparison by removing that overhead
     float *dData = NULL;
@@ -219,9 +227,16 @@ int main(int argc, char **argv)
     int bound;;//32
     int num_ele;//4096
     int iterations;//128
-	sscanf (argv[1],"%d",&bound);
-	sscanf (argv[2],"%d",&num_ele);
-	sscanf (argv[3],"%d",&iterations);
+	if(argc == 4){
+		sscanf (argv[1],"%d",&bound);
+		sscanf (argv[2],"%d",&num_ele);
+		sscanf (argv[3],"%d",&iterations);
+	}else{
+		bound = 32;
+		num_ele = 512;
+		iterations = 128;
+	}
+	
     srand(time(NULL)); //just seed the generator
 
     vector<body *> *point = new vector<body *>(num_ele);
@@ -290,6 +305,9 @@ int main(int argc, char **argv)
         cudaMalloc((void **)&d_body_pos, num_ele*sizeof(int));
 
         int nblocks  = num_ele/1024;
+		if(!nblocks){
+			nblocks++;
+		}
         int nthreads = num_ele/nblocks;
         //check if enough threads exist
         if(nthreads*nblocks != num_ele){
@@ -334,8 +352,23 @@ int main(int argc, char **argv)
         free(h_body_pos);
         cudaFree(d_arr_tree);
         cudaFree(d_body_pos);
+
+		if (writeOut == 1)
+        {
+            for (int idx = 0; idx < num_ele; idx++)
+            {
+                positionFile << (*point)[idx]->com.x << "|" << (*point)[idx]->com.y << "|" << (*point)[idx]->com.x << endl;
+            }
+            positionFile << endl;
+        }
 		//cout<<j<<endl;
     }
+
+	for (i = 0; i < num_ele; i++)
+    {
+        free((*point)[i]);
+    }	
+	
 	end_total = clock();
 	kernel_time /= (float)1000;
 	printf("Kernel: \t%f\n",kernel_time);
@@ -344,6 +377,12 @@ int main(int argc, char **argv)
 	float total_time = end_total - start_total;
 	total_time /= (float)CLOCKS_PER_SEC;
 	printf("Total: %f\n",total_time);
+
+	// Close the file when no more updates are going to be written
+    if (writeOut == 1)
+    {
+        positionFile.close();
+    }
 
     return 0;
 }

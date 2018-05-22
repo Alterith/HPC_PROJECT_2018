@@ -19,8 +19,10 @@
 #include "octree.h"
 #include "barnes_hut.h"
 #include "body.h"
-
+#include <fstream>
 using namespace std;
+
+const int writeOut = 1;
 
 /*
  * 
@@ -31,11 +33,17 @@ void update_point(node *octree, vector<body *> *point, int bound);
 
 int main(int argc, char **argv)
 {
-
+	// Open file to export point data, only if setting is set
+    ofstream positionFile;
+	if (writeOut == 1)
+    {
+        positionFile.open("../visual/positionFile.txt");
+    }
+	clock_t start_total = clock(), end_total;
     int i = 0;
-    int bound = 16;
-    const int num_ele = 4000;
-    int iterations = 100;
+    int bound = 32;
+    const int num_ele = 512;
+    int iterations = 1024;
     srand(time(NULL)); //just seed the generator
 
     //mass, pos x,y,z, vel x,y,z
@@ -71,19 +79,40 @@ int main(int argc, char **argv)
         {
             int ele = insert_node(test, (*point)[i], i);
         }
-		cout<<j<<": calculating force"<<endl;
+		//cout<<j<<": calculating force"<<endl;
         update_position(test, test);
-		cout<<j<<": updating point"<<endl;
+		//cout<<j<<": updating point"<<endl;
         update_point(test, point, bound);
         //cout<<"updated points"<<endl;
         free_node(test);
         //cout<<"free tree"<<endl;
+		if (writeOut == 1)
+        {
+            for (int idx = 0; idx < num_ele; idx++)
+            {
+                positionFile << (*point)[idx]->com.x << "|" << (*point)[idx]->com.y << "|" << (*point)[idx]->com.x << endl;
+            }
+            positionFile << endl;
+        }
     }
 
     for (i = 0; i < num_ele; i++)
     {
         free((*point)[i]);
     }
+	
+	end_total = clock();
+	printf("Overhead: %f\n",0.0);
+	float total_time = end_total - start_total;
+	total_time /= (float)CLOCKS_PER_SEC;
+	printf("Total: %f\n",total_time);
+	
+	// Close the file when no more updates are going to be written
+    if (writeOut == 1)
+    {
+        positionFile.close();
+    }
+
     return 0;
 }
 
@@ -111,7 +140,7 @@ void update_point(node *octree, vector<body *> *point, int bound)
     if (octree->num_points == 1)
     {
         //put point in array
-        octree->com.cout2();
+        //octree->com.cout2();
         octree->com.new_pos(octree->vel, 0.01, bound);
         int num_ele = octree->body_num;
         (*point)[num_ele]->mass = octree->mass;
